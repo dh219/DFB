@@ -4,6 +4,7 @@
 
 The primary goals of the project are to:
 
+* Be a plug-in board requiring no soldering on the Falcon;
 * Increase available RAM beyond the 14MB the stock Falcon can be expanded to;
 * Be low cost;
 * Provide some acceleration;
