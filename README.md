@@ -13,8 +13,8 @@ The primary goals of the project are to:
 
 I'll be providing some development narration on this project's [Wiki](https://github.com/dh219/DFB/wiki) & an update on progress.
 
-Firmware source, driver code and KiCAD files will be published at each release.
+Firmware source (ISE), board design files (KiCAD) and any source for support programs will be published at each release.
 
 ---
 
-*Copyright 2020 D Henderson, released under GPL2.0*
+*Copyright 2020-21 D Henderson, released under GPL2.0*
