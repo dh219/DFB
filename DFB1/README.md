@@ -14,7 +14,7 @@ Premade gerber files may be found in the releases.
 
 The directory *ise* contains the project files, verilog source and hardware definition files needed to build the firmware for the CPLD.
 
-AMD/Xilinx's ISE Design Suite is required to edit and synthesise the CPLD firmware. Tested with ISE Webpack v13.
+AMD/Xilinx's ISE Design Suite is required to edit and synthesise the CPLD firmware. Tested with ISE Webpack v14.7.
 
 https://www.xilinx.com/products/design-tools/ise-design-suite/ise-webpack.html
 
