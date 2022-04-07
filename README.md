@@ -17,4 +17,4 @@ Firmware source (ISE), board design files (KiCAD) and any source for support pro
 
 ---
 
-*Copyright 2020-21 D Henderson, released under GPL2.0*
+*Copyright 2020-22 D Henderson, released under GPL2.0*
