@@ -144,7 +144,7 @@ wire [1:0] xdtack_delay;
 FDCP ff_xdtack1( .D( XDTACK ), .C( ~XCPUCLK), .CLR( 1'b0 ), .PRE( 1'b0 ), .Q(xdtack_delay[0]) );
 FDCP ff_xdtack2( .D( xdtack_delay[0] ), .C( ~XCPUCLK  ), .CLR( 1'b0 ), .PRE( 1'b0 ), .Q(xdtack_delay[1]) );
 wire clockholdoff = &xdtack_delay[1:0];
-wire lowspeed = DISABLE_FAST /*& resetblock*/ & ( AS | ~ttram_access | ~rom_access | ~fpu ) & clockholdoff ; // low active (rom access here too)
+wire lowspeed = DISABLE_FAST & resetblock & ( AS | ~ttram_access | ~rom_access | ~fpu ) & clockholdoff ; // low active (rom access here too)
 
 
 wire CPUCLK_D;
@@ -277,7 +277,7 @@ assign ROMCE = DISABLE ? rom_access : flash_access;
 assign ROMOE = DISABLE ? rom_access | ~XRW : flash_access | ~XRW;
 
 
-assign ROM_A19 = A[19];
+assign ROM_A19 = 1'b0;// A[19];
 
 assign LED[1] = BGK; 	// board master
 assign LED[2] = lowspeed; // speed
