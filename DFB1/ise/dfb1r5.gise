@@ -28,7 +28,7 @@
     <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_NGDBUILD_LOG" xil_pn:name="dfb1r5.bld"/>
     <file xil_pn:fileType="FILE_CMD_LOG" xil_pn:name="dfb1r5.cmd_log"/>
     <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_GYD" xil_pn:name="dfb1r5.gyd"/>
-    <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_JEDEC" xil_pn:name="dfb1r5.jed"/>
+    <file xil_pn:fileType="FILE_JEDEC" xil_pn:name="dfb1r5.jed"/>
     <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_LSO" xil_pn:name="dfb1r5.lso"/>
     <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_MFD" xil_pn:name="dfb1r5.mfd"/>
     <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_NGA" xil_pn:name="dfb1r5.nga"/>
@@ -42,6 +42,7 @@
     <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_XST_STX" xil_pn:name="dfb1r5.stx"/>
     <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_XST_REPORT" xil_pn:name="dfb1r5.syr"/>
     <file xil_pn:fileType="FILE_FITTER_REPORT" xil_pn:name="dfb1r5.tim"/>
+    <file xil_pn:fileType="FILE_FITTER_REPORT" xil_pn:name="dfb1r5.tspec"/>
     <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_VM6" xil_pn:name="dfb1r5.vm6"/>
     <file xil_pn:fileType="FILE_FITTER_REPORT" xil_pn:name="dfb1r5.xml"/>
     <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_XST" xil_pn:name="dfb1r5.xst"/>
@@ -57,15 +58,15 @@
   </files>
 
   <transforms xmlns="http://www.xilinx.com/XMLSchema">
-    <transform xil_pn:end_ts="1649193681" xil_pn:name="TRAN_copyInitialToXSTAbstractSynthesis" xil_pn:start_ts="1649193681">
+    <transform xil_pn:end_ts="1654712655" xil_pn:name="TRAN_copyInitialToXSTAbstractSynthesis" xil_pn:start_ts="1654712655">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1649193681" xil_pn:name="TRAN_schematicsToHdl" xil_pn:prop_ck="-343286323585787285" xil_pn:start_ts="1649193681">
+    <transform xil_pn:end_ts="1654712655" xil_pn:name="TRAN_schematicsToHdl" xil_pn:prop_ck="-343286323585787285" xil_pn:start_ts="1654712655">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1649193687" xil_pn:in_ck="-2491592198554570807" xil_pn:name="TRANEXT_xstsynthesize_xc9500xl" xil_pn:prop_ck="-4624210250478646160" xil_pn:start_ts="1649193681">
+    <transform xil_pn:end_ts="1654712728" xil_pn:in_ck="-2491592198554570807" xil_pn:name="TRANEXT_xstsynthesize_xc9500xl" xil_pn:prop_ck="-4624210250478646160" xil_pn:start_ts="1654712723">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
@@ -81,11 +82,11 @@
       <outfile xil_pn:name="webtalk_pn.xml"/>
       <outfile xil_pn:name="xst"/>
     </transform>
-    <transform xil_pn:end_ts="1649193687" xil_pn:in_ck="4788846534670608" xil_pn:name="TRAN_compileBCD2" xil_pn:prop_ck="5069202361411751878" xil_pn:start_ts="1649193687">
+    <transform xil_pn:end_ts="1654712661" xil_pn:in_ck="4788846534670608" xil_pn:name="TRAN_compileBCD2" xil_pn:prop_ck="5069202361411751878" xil_pn:start_ts="1654712661">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1649193691" xil_pn:in_ck="-5677718007004063398" xil_pn:name="TRAN_ngdbuild" xil_pn:prop_ck="6932115226421322529" xil_pn:start_ts="1649193687">
+    <transform xil_pn:end_ts="1654712732" xil_pn:in_ck="-5677718007004063398" xil_pn:name="TRAN_ngdbuild" xil_pn:prop_ck="6932115226421322529" xil_pn:start_ts="1654712728">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
       <outfile xil_pn:name="_ngo"/>
@@ -94,7 +95,7 @@
       <outfile xil_pn:name="dfb1r5.ngd"/>
       <outfile xil_pn:name="dfb1r5_ngdbuild.xrpt"/>
     </transform>
-    <transform xil_pn:end_ts="1649357320" xil_pn:in_ck="4788846534663115" xil_pn:name="TRANEXT_vm6File_xc9500xl" xil_pn:prop_ck="-720626760070067959" xil_pn:start_ts="1649357313">
+    <transform xil_pn:end_ts="1654712739" xil_pn:in_ck="4788846534663115" xil_pn:name="TRANEXT_vm6File_xc9500xl" xil_pn:prop_ck="-720626760070067959" xil_pn:start_ts="1654712732">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
@@ -105,17 +106,19 @@
       <outfile xil_pn:name="dfb1r5.pnx"/>
       <outfile xil_pn:name="dfb1r5.rpt"/>
       <outfile xil_pn:name="dfb1r5.tim"/>
+      <outfile xil_pn:name="dfb1r5.tspec"/>
       <outfile xil_pn:name="dfb1r5.vm6"/>
       <outfile xil_pn:name="dfb1r5.xml"/>
       <outfile xil_pn:name="dfb1r5_build.xml"/>
       <outfile xil_pn:name="dfb1r5_pad.csv"/>
     </transform>
-    <transform xil_pn:end_ts="1649357321" xil_pn:in_ck="4788846534671979" xil_pn:name="TRANEXT_crtProg_xc9500" xil_pn:prop_ck="-6294026017969277533" xil_pn:start_ts="1649357320">
+    <transform xil_pn:end_ts="1654712741" xil_pn:in_ck="4788846534671979" xil_pn:name="TRANEXT_crtProg_xc9500" xil_pn:prop_ck="-6294026017969277533" xil_pn:start_ts="1654712739">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
-      <outfile xil_pn:name="dfb1r5.jed"/>
+      <status xil_pn:value="OutOfDateForOutputs"/>
+      <status xil_pn:value="OutputRemoved"/>
     </transform>
-    <transform xil_pn:end_ts="1649193700" xil_pn:in_ck="4788846534671979" xil_pn:name="TRAN_timRpt" xil_pn:prop_ck="111903974446" xil_pn:start_ts="1649193698">
+    <transform xil_pn:end_ts="1654712674" xil_pn:in_ck="4788846534671979" xil_pn:name="TRAN_timRpt" xil_pn:prop_ck="111903974446" xil_pn:start_ts="1654712672">
       <status xil_pn:value="AbortedRun"/>
       <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>

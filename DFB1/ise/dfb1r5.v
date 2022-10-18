@@ -92,7 +92,7 @@ reg DISABLE_FAST = 1'b1;
 always @(posedge RST) begin
 	DISABLE <= ENABLE;
 	DISABLE_FLASH_ROM <= EN_FLASH;
-	DISABLE_FAST <= OPTION2;
+	//DISABLE_FAST <= ~OPTION2;
 end
 
 wire HIGHZ;
@@ -144,7 +144,7 @@ wire [1:0] xdtack_delay;
 FDCP ff_xdtack1( .D( XDTACK ), .C( ~XCPUCLK), .CLR( 1'b0 ), .PRE( 1'b0 ), .Q(xdtack_delay[0]) );
 FDCP ff_xdtack2( .D( xdtack_delay[0] ), .C( ~XCPUCLK  ), .CLR( 1'b0 ), .PRE( 1'b0 ), .Q(xdtack_delay[1]) );
 wire clockholdoff = &xdtack_delay[1:0];
-wire lowspeed = DISABLE_FAST & resetblock & ( AS | ~ttram_access | ~rom_access | ~fpu ) & clockholdoff ; // low active (rom access here too)
+wire lowspeed = DISABLE_FAST & resetblock & fpu & ( AS | ~ttram_access | ~rom_access ) & clockholdoff ; // low active (rom access here too)
 
 
 wire CPUCLK_D;
@@ -163,8 +163,8 @@ sdram SDRAM (
 	// inputs
 	.RESET(RST),
 
-	.CLKCPU (CPUCLK),
-	.CLK    (CLKRAM),
+	.CLKCPU (CPUCLK_D),
+	.CLK    (CPUCLK_D),
 
 	.A(A),
 	.SIZ(SIZ),
@@ -226,7 +226,7 @@ wire xas_holdoff_dsp = ~dsp_access & ~oldxdtack[1] & XAS;
 wire [1:0] RAM_DTACK = { XDTACK | ~dsp_access | ~AVECCYCLE, 1'b1 };
 wire [1:0] ROM_DTACK = { rom_access | ( lowspeed ? AS_DELAY[4] : AS_DELAY[1] ), 1'b1 };
 wire [1:0] DSP_DTACK = { 1'b1, XDTACK | dsp_access };
-wire [1:0] FPU_DSACK_INT = fpu | { FPUDSACK[1], FPUDSACK[0] };
+wire [1:0] FPU_DSACK_INT = fpu | FPUDSACK;
 wire [1:0] REG_DSACK = { reg_access | ( AS_DELAY[4] & flash_xas_delay[1] ), 1'b1 }; // only really an 8 bit port, but pretend to be 16 to keep compatibility when being read from the Falcon's motherboard in disabled state
 
 assign DSACK = ( RAM_DTACK & ROM_DTACK & DSP_DTACK & FPU_DSACK_INT & { FLASH_DTACK, 1'b1 } );

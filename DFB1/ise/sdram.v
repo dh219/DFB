@@ -254,8 +254,9 @@ always @( negedge AS30 ) begin
 end
 
 wire [2:0] STERM_INT;
-FDCP ff_sterm0( .D( WAIT_BLOCK ), 	.C( CLK ), .PRE( ~STERM_INT[1] ), 	.CLR( 1'b0 ), .Q( STERM_INT[0] ) ); 
+FDCP ff_sterm0( .D( WAIT_BLOCK ), 	.C( CLK ), .PRE( ~STERM_INT[2] ), 	.CLR( 1'b0 ), .Q( STERM_INT[0] ) ); 
 FDCP ff_sterm1( .D( STERM_INT[0] ), .C( CLK ), .PRE( ~STERM_INT[2] ), 	.CLR( 1'b0 ), .Q( STERM_INT[1] ) ); 
+FDCP ff_sterm2( .D( STERM_INT[1] ), .C( CLK ), .PRE( ~STERM_INT[2] ), 	.CLR( 1'b0 ), .Q( STERM_INT[2] ) ); 
 
 
 assign RAMOE = ACCESS;
@@ -273,7 +274,8 @@ assign ARAM     = ready ? init_address : address;
 assign BA       = ready ? 2'b00 : bank;
 assign CLKRAME  = 1'b1;
 
-assign STERM = WRITECYCLE ? STERM_INT[1] : WAIT_BLOCK; 
+//assign STERM = WRITECYCLE ? STERM_INT[1] : WAIT_BLOCK; 
+assign STERM = STERM_INT[1];
 
 assign READY = ready;
 
