@@ -42,7 +42,7 @@ module dfb1r5(
 	input [1:0] 	SIZ,
 	input				DS,
 	output ROM_A19,
-	input [7:0] D,
+	inout [7:0] D,
 	output [1:5] LED,
 
 	input P50,
@@ -84,16 +84,25 @@ wire resetblock; // active low
 FDCP latch_resetblock( .D( 1'b1 ), .C( ~speedallowtrigger ), .CLR( ~RST ), .PRE( 1'b0 ), .Q( resetblock ) );
 
 /* config section */
+reg [7:0] reg_dfb = 8'b11111101;
 
 reg DISABLE = 1'b1;
 reg DISABLE_FLASH_ROM = 1'b1;
 reg DISABLE_ALTRAM = 1'b1;
 reg DISABLE_FAST = 1'b1;
 always @(posedge RST) begin
-	DISABLE <= ENABLE;
-	DISABLE_FLASH_ROM <= EN_FLASH;
-	DISABLE_FAST <= OPTION2;
+//	DISABLE <= ENABLE;
+//	DISABLE_FLASH_ROM <= EN_FLASH;
+//	DISABLE_FAST <= OPTION2;
+	DISABLE <= reg_dfb[0];
+	DISABLE_FLASH_ROM <= reg_dfb[1];
 end
+
+always @(*) begin
+	DISABLE_FAST <= reg_dfb[3];
+end
+
+wire [1:0] FPUSPEED = reg_dfb[5:4];
 
 wire HIGHZ;
 
@@ -121,12 +130,13 @@ ARBDFB1 arbdfb1 (
 	.STATE(state)
 );
 
-wire fpu = {FC,A[19:16]} != 7'b1110010; // co-processor decode
+wire fpu = AS | {FC,A[19:16]} != 7'b1110010; // co-processor decode
 wire ttram_access = ~DISABLE_ALTRAM | ( A[27:24] == 'hF | A[27:24] == 'h0 );
 wire rom_access =  ~DISABLE_FLASH_ROM | A[27:20] != 8'h0E; // Flash ROM
 wire dsp_access = A[27:8] != 20'h0FFA2;
 wire berr_ram = OPTION1 ? A[26:24] != 3'b101 : A[27:24] != 4'b1001; // 128MB / 64 switch
-wire reg_access = A[31:16] != 16'h00F1; // our register F1xxxx
+wire reg_access = A[31:4] != 28'h00F1DFB; // our register F1DFxx
+
 
 reg flash_access = 1'b1;
 always @(negedge XAS ) begin
@@ -144,8 +154,8 @@ wire [1:0] xdtack_delay;
 FDCP ff_xdtack1( .D( XDTACK ), .C( ~XCPUCLK), .CLR( 1'b0 ), .PRE( 1'b0 ), .Q(xdtack_delay[0]) );
 FDCP ff_xdtack2( .D( xdtack_delay[0] ), .C( ~XCPUCLK  ), .CLR( 1'b0 ), .PRE( 1'b0 ), .Q(xdtack_delay[1]) );
 wire clockholdoff = &xdtack_delay[1:0];
-//wire lowspeed = DISABLE_FAST & resetblock & fpu & ( AS | ~ttram_access | ~rom_access ) & clockholdoff ; // low active (rom access here too)
-wire lowspeed = DISABLE_FAST & resetblock & ( AS | ~ttram_access | ~rom_access | ~fpu ) & clockholdoff ; // low active (rom access here too)
+wire lowspeed = DISABLE_FAST & resetblock & fpu & ( AS | ~ttram_access | ~rom_access ) & clockholdoff ; // low active (rom access here too)
+//wire lowspeed = DISABLE_FAST & resetblock & ( AS | ~ttram_access | ~rom_access | ~fpu ) & clockholdoff ; // low active (rom access here too)
 
 wire CPUCLK_D;
 wire clock_block;
@@ -204,7 +214,7 @@ FDCP ff_asdly5( .D(AS_DELAY[4]), .C( ~CPUCLK ), .CLR(1'b0), .PRE( AS ), .Q(AS_DE
 
 // synthesise flash xdtack
 wire [1:0] flash_xas_delay;
-FDCP ff_flash_xas_delay1( .D(  XAS | flash_access ), 				.C( ~XCPUCLK ), .PRE( XAS ), .CLR( 1'b0 ), .Q( flash_xas_delay[0] ) );
+FDCP ff_flash_xas_delay1( .D(  XAS | (flash_access&reg_access) ), 				.C( ~XCPUCLK ), .PRE( XAS ), .CLR( 1'b0 ), .Q( flash_xas_delay[0] ) );
 FDCP ff_flash_xas_delay2( .D(  flash_xas_delay[0] ), 				.C( ~XCPUCLK ), .PRE( XAS ), .CLR( 1'b0 ), .Q( flash_xas_delay[1] ) );
 wire FLASH_DTACK = flash_xas_delay[1];
 
@@ -227,9 +237,9 @@ wire [1:0] RAM_DTACK = { XDTACK | ~dsp_access | ~AVECCYCLE, 1'b1 };
 wire [1:0] ROM_DTACK = { rom_access | ( lowspeed ? AS_DELAY[4] : AS_DELAY[1] ), 1'b1 };
 wire [1:0] DSP_DTACK = { 1'b1, XDTACK | dsp_access };
 wire [1:0] FPU_DSACK_INT = fpu | FPUDSACK;
-wire [1:0] REG_DSACK = { reg_access | ( AS_DELAY[4] & flash_xas_delay[1] ), 1'b1 }; // only really an 8 bit port, but pretend to be 16 to keep compatibility when being read from the Falcon's motherboard in disabled state
+wire [1:0] REG_DSACK = { AS | reg_access, 1'b1 }; // only really an 8 bit port, but pretend to be 16 to keep compatibility when being read from the Falcon's motherboard in disabled state
 
-assign DSACK = ( RAM_DTACK & ROM_DTACK & DSP_DTACK & FPU_DSACK_INT & { FLASH_DTACK, 1'b1 } );
+assign DSACK = ( REG_DSACK & RAM_DTACK & ROM_DTACK & DSP_DTACK & FPU_DSACK_INT & { FLASH_DTACK, 1'b1 } );
 
 
 // assignments
@@ -253,7 +263,7 @@ assign AVEC = ~DISABLE | AVECCYCLE | XDTACK;
 assign XDTACK = DISABLE ? 1'bz : ( FLASH_DTACK ? 1'bz : 1'b0 ); // inactive when accelerator enabled, becomes a bus slave when disabled
 
 assign CPUCLK = CPUCLK_D;
-assign FPUCLK = CLKOSC_2;
+assign FPUCLK = FPUSPEED == 2'b00 ? CLKOSC : ( FPUSPEED == 2'b11 ? XCPUCLK : CLKOSC_2 ); // XCPUCLK; //CLKOSC_2;
 
 
 assign CLKRAM = CPUCLK_D;
@@ -284,5 +294,30 @@ assign LED[2] = lowspeed; // speed
 assign LED[3] = ~DSACK[0];		// dsp & part FPU
 assign LED[4] = ~STERM; // AltRAM
 assign LED[5] = ~(RST & FPUCS);	// reset active or FPU
+
+/* register section */
+reg [7:0] d_in;
+
+always @(negedge CLKOSC) begin
+	if( XRW ) begin // read
+		case( A[3:0] )
+			4'h0: begin
+				d_in <= 8'h1;
+			end
+			4'h2: begin
+				d_in <= reg_dfb;
+			end
+		endcase
+	end
+	else if( ~(AS | DS | reg_access | XRW) ) begin // write to our register
+		case( A[3:0] )
+			4'h2: begin
+				reg_dfb <= D[7:0];
+			end
+		endcase
+	end
+end
+
+assign D[7:0] = ( AS | DS | reg_access | ~XRW ) ? 8'hz : d_in;
 
 endmodule
