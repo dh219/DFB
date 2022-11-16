@@ -239,8 +239,14 @@ wire [1:0] DSP_DTACK = { 1'b1, XDTACK | dsp_access };
 wire [1:0] FPU_DSACK_INT = fpu | FPUDSACK;
 wire [1:0] REG_DSACK = { AS | reg_access, 1'b1 }; // only really an 8 bit port, but pretend to be 16 to keep compatibility when being read from the Falcon's motherboard in disabled state
 
-assign DSACK = ( REG_DSACK & RAM_DTACK & ROM_DTACK & DSP_DTACK & FPU_DSACK_INT & { FLASH_DTACK, 1'b1 } );
+/* direct DSACK connections */
+/*
+wire [1:0] DSACK_INT = ( REG_DSACK & RAM_DTACK & ROM_DTACK & DSP_DTACK & { FLASH_DTACK, 1'b1 } );
+assign DSACK = fpu ? DSACK_INT : 2'bzz;
+*/
 
+/* DSACK via CPLD */
+assign DSACK = ( REG_DSACK & RAM_DTACK & ROM_DTACK & DSP_DTACK & FPU_DSACK_INT & { FLASH_DTACK, 1'b1 } );
 
 // assignments
 assign FPUCS = fpu;
@@ -264,7 +270,6 @@ assign XDTACK = DISABLE ? 1'bz : ( FLASH_DTACK ? 1'bz : 1'b0 ); // inactive when
 
 assign CPUCLK = CPUCLK_D;
 assign FPUCLK = FPUSPEED == 2'b00 ? CLKOSC : ( FPUSPEED == 2'b11 ? XCPUCLK : CLKOSC_2 ); // XCPUCLK; //CLKOSC_2;
-
 
 assign CLKRAM = CPUCLK_D;
 
