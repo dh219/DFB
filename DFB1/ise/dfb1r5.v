@@ -45,10 +45,10 @@ module dfb1r5(
 	inout [7:0] D,
 	output [1:5] LED,
 
-	input P50,
-	input P61,
-	input P106,
-	input P110,
+	output P50,	//CLK
+	output P61,	// MOSI
+	input P106, // MISO
+	output P110, // CS
 
 	input   			CLKOSC,
 	input KHZ500,
@@ -85,23 +85,24 @@ FDCP latch_resetblock( .D( 1'b1 ), .C( ~speedallowtrigger ), .CLR( ~RST ), .PRE(
 
 /* config section */
 reg [7:0] reg_dfb = 8'b11111101;
+reg [7:0] reg_spi = 8'b11111111;
 
 reg DISABLE = 1'b1;
 reg DISABLE_FLASH_ROM = 1'b1;
 reg DISABLE_ALTRAM = 1'b1;
 reg DISABLE_FAST = 1'b1;
 always @(posedge RST) begin
-//	DISABLE <= ENABLE;
-//	DISABLE_FLASH_ROM <= EN_FLASH;
-//	DISABLE_FAST <= OPTION2;
-	DISABLE <= reg_dfb[0];
-	DISABLE_FLASH_ROM <= reg_dfb[1];
+	DISABLE <= ENABLE;
+	DISABLE_FLASH_ROM <= EN_FLASH;
+	DISABLE_FAST <= OPTION2;
+//	DISABLE <= reg_dfb[0];
+//	DISABLE_FLASH_ROM <= reg_dfb[1];
 end
-
+/*
 always @(*) begin
 	DISABLE_FAST <= reg_dfb[3];
 end
-
+*/
 wire [1:0] FPUSPEED = reg_dfb[5:4];
 
 wire HIGHZ;
@@ -302,27 +303,151 @@ assign LED[5] = ~(RST & FPUCS);	// reset active or FPU
 
 /* register section */
 reg [7:0] d_in;
+reg [7:0] reg_spi_data = 'hFF;
+
+reg spi_write_request = 1'b1;
+reg [5:0] spi_write_state = 'd0;
+
+reg spi_read_request = 1'b1;
+reg [5:0] spi_read_state = 'd0;
+
+//reg spi_cs = 1'b1;
+reg spi_clk = 1'b0;
+reg spi_mosi = 1'b1;
 
 always @(negedge CLKOSC) begin
-	if( XRW ) begin // read
-		case( A[3:0] )
-			4'h0: begin
-				d_in <= 8'h1;
-			end
-			4'h2: begin
-				d_in <= reg_dfb;
-			end
-		endcase
+	if( spi_write_state != 'd0 ) begin
+		spi_write_request <= 1'b1;
 	end
-	else if( ~(AS | DS | reg_access | XRW) ) begin // write to our register
-		case( A[3:0] )
-			4'h2: begin
-				reg_dfb <= D[7:0];
-			end
-		endcase
+	if( spi_read_state != 'd0 ) begin
+		spi_read_request <= 1'b1;
 	end
+
+	if( ~(AS | DS | reg_access) ) begin
+		if( XRW ) begin // read
+			case( A[3:0] )
+				4'h0: begin
+					d_in <= 8'h1;
+				end
+				4'h2: begin
+					d_in <= reg_dfb;
+				end
+				4'h4: begin
+					spi_read_request <= 1'b0;
+					d_in <= reg_spi_data;
+				end
+				4'h6: begin
+					d_in <= {reg_spi[7:1],P106};
+				end			
+			endcase
+		end
+		else begin // write to our register
+			case( A[3:0] )
+				4'h2: begin
+					reg_dfb <= D[7:0];
+				end
+				4'h6: begin
+					reg_spi <= D[7:0];
+				end
+				4'h4: begin
+					reg_spi_data <= D[7:0];
+					spi_write_request <= 1'b0;
+				end
+			endcase
+		end
+	end
+	reg_spi[3] <= P106; // MISO
 end
 
 assign D[7:0] = ( AS | DS | reg_access | ~XRW ) ? 8'hz : d_in;
+
+
+always @( negedge KHZ500 ) begin
+
+	if( spi_read_state != 'd0 ) begin
+		spi_read_state <= spi_read_state + 'd1;
+		if( spi_read_state % 2 == 0 ) // even
+			spi_clk <= 1'b0;
+		else
+			spi_clk <= 1'b1;
+	end
+	
+	if( spi_write_state != 'd0 ) begin
+		spi_write_state <= spi_write_state + 'd1;
+		if( spi_write_state % 2 == 0 ) // even
+			spi_clk <= 1'b0;
+		else
+			spi_clk <= 1'b1;
+	end
+
+	case(spi_read_state)
+		'd0: begin 										// SPI IDLE
+			if( !spi_read_request ) begin
+				spi_read_state <= 'd2;
+			end
+		end
+		'd18: begin
+			spi_read_state <= 'd0;
+		end
+	endcase
+
+
+	case(spi_write_state)
+		'd0: begin 										// SPI IDLE
+			if( spi_read_request && !spi_write_request ) begin
+				spi_write_state <= 'd2;
+			end
+		end
+		'd2: begin										// WRITE bit 0
+			spi_mosi <= reg_spi_data[7];
+		end
+		'd4: begin
+			spi_mosi <= reg_spi_data[6];
+		end
+		'd6: begin
+			spi_mosi <= reg_spi_data[5];
+		end
+		'd8: begin
+			spi_mosi <= reg_spi_data[4];
+		end
+		'd10: begin
+			spi_mosi <= reg_spi_data[3];
+		end
+		'd12: begin
+			spi_mosi <= reg_spi_data[2];
+		end
+		'd14: begin
+			spi_mosi <= reg_spi_data[1];
+		end
+		'd16: begin
+			spi_mosi <= reg_spi_data[0];		// WRITE bit 7
+		end
+		'd18: begin
+			spi_write_state <= 'd0;
+		end
+	endcase
+	
+	if( ~RST ) begin
+		spi_write_state <= 'd0;
+		spi_read_state <= 'd0;
+	end
+	
+end
+
+/*
+board layout:-
+
+P50  P110 3V3
+P106 P61  GND
+
+CLK  CS   3V3
+MISO MOSI GND
+*/
+
+assign P110 = reg_spi[1]; // CS
+assign P50 = spi_clk; //reg_spi[2]; // CLK
+assign P61 = spi_mosi; //reg_spi[0]; // MOSI
+
+
 
 endmodule
