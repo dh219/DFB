@@ -85,7 +85,20 @@ FDCP latch_resetblock( .D( 1'b1 ), .C( ~speedallowtrigger ), .CLR( ~RST ), .PRE(
 
 /* config section */
 reg [7:0] reg_dfb = 8'b11111101;
-reg [7:0] reg_spi = 8'b11111111;
+reg [7:0] reg_spi = 8'b11111111; // [7] = busy; [6] = read req; [5-1] reserved ; [0] = CS
+
+reg [7:0] d_in;
+reg [7:0] reg_spi_write_data = 'hFF;
+reg [7:0] reg_spi_read_data = 'hFF;
+
+reg spi_write_request = 1'b0; // active high to match user-facing spi_reg[4]
+reg [5:0] spi_write_state = 'd0;
+
+//reg spi_read_request = 1'b1;
+reg [5:0] spi_read_state = 'd0;
+
+reg spi_clk = 1'b0;
+reg spi_mosi = 1'b1;
 
 reg DISABLE = 1'b1;
 reg DISABLE_FLASH_ROM = 1'b1;
@@ -301,26 +314,15 @@ assign LED[3] = ~DSACK[0];		// dsp & part FPU
 assign LED[4] = ~STERM; // AltRAM
 assign LED[5] = ~(RST & FPUCS);	// reset active or FPU
 
+// reg_spi[6] == spi_read_request -- active high
+
 /* register section */
-reg [7:0] d_in;
-reg [7:0] reg_spi_data = 'hFF;
-
-reg spi_write_request = 1'b1;
-reg [5:0] spi_write_state = 'd0;
-
-reg spi_read_request = 1'b1;
-reg [5:0] spi_read_state = 'd0;
-
-//reg spi_cs = 1'b1;
-reg spi_clk = 1'b0;
-reg spi_mosi = 1'b1;
-
 always @(negedge CLKOSC) begin
 	if( spi_write_state != 'd0 ) begin
-		spi_write_request <= 1'b1;
+		spi_write_request <= 1'b0;
 	end
 	if( spi_read_state != 'd0 ) begin
-		spi_read_request <= 1'b1;
+		reg_spi[6] <= 1'b0;
 	end
 
 	if( ~(AS | DS | reg_access) ) begin
@@ -333,11 +335,10 @@ always @(negedge CLKOSC) begin
 					d_in <= reg_dfb;
 				end
 				4'h4: begin
-					spi_read_request <= 1'b0;
-					d_in <= reg_spi_data;
+					d_in <= reg_spi_read_data;
 				end
 				4'h6: begin
-					d_in <= {reg_spi[7:1],P106};
+					d_in <= { reg_spi[7], 6'd0, reg_spi[0] };
 				end			
 			endcase
 		end
@@ -347,23 +348,33 @@ always @(negedge CLKOSC) begin
 					reg_dfb <= D[7:0];
 				end
 				4'h6: begin
-					reg_spi <= D[7:0];
+					reg_spi[6] <= D[6];
+					reg_spi[0] <= D[0];
 				end
 				4'h4: begin
-					reg_spi_data <= D[7:0];
-					spi_write_request <= 1'b0;
+					reg_spi_write_data <= D[7:0];
+					spi_write_request <= 1'b1;
 				end
 			endcase
 		end
 	end
-	reg_spi[3] <= P106; // MISO
 end
 
 assign D[7:0] = ( AS | DS | reg_access | ~XRW ) ? 8'hz : d_in;
 
+always @(negedge CLKOSC) begin
+	if( reg_spi[6] || spi_write_request )
+		reg_spi[7] <= 1'b1;
+	else if( spi_read_state == 'd0 && spi_write_state == 'd0 )
+		reg_spi[7] <= 1'b0;
+	else
+		reg_spi[7] <= 1'b1;
+end
 
 always @( negedge KHZ500 ) begin
 
+	spi_clk <= 1'b0;
+	
 	if( spi_read_state != 'd0 ) begin
 		spi_read_state <= spi_read_state + 'd1;
 		if( spi_read_state % 2 == 0 ) // even
@@ -382,11 +393,34 @@ always @( negedge KHZ500 ) begin
 
 	case(spi_read_state)
 		'd0: begin 										// SPI IDLE
-			if( !spi_read_request ) begin
-				spi_read_state <= 'd2;
+			if( reg_spi[6] ) begin
+				spi_read_state <= 'd1;
+				spi_mosi <= 1'b1;
 			end
 		end
-		'd18: begin
+		'd2: begin
+			reg_spi_read_data[7] <= P106;
+		end
+		'd4: begin
+			reg_spi_read_data[6] <= P106;
+		end
+		'd6: begin
+			reg_spi_read_data[5] <= P106;
+		end
+		'd8: begin
+			reg_spi_read_data[4] <= P106;
+		end
+		'd10: begin
+			reg_spi_read_data[3] <= P106;
+		end
+		'd12: begin
+			reg_spi_read_data[2] <= P106;
+		end
+		'd14: begin
+			reg_spi_read_data[1] <= P106;
+		end
+		'd16: begin
+			reg_spi_read_data[0] <= P106;
 			spi_read_state <= 'd0;
 		end
 	endcase
@@ -394,36 +428,37 @@ always @( negedge KHZ500 ) begin
 
 	case(spi_write_state)
 		'd0: begin 										// SPI IDLE
-			if( spi_read_request && !spi_write_request ) begin
+			if( !reg_spi[6] && spi_write_request ) begin
 				spi_write_state <= 'd2;
 			end
 		end
 		'd2: begin										// WRITE bit 0
-			spi_mosi <= reg_spi_data[7];
+			spi_mosi <= reg_spi_write_data[7];
 		end
 		'd4: begin
-			spi_mosi <= reg_spi_data[6];
+			spi_mosi <= reg_spi_write_data[6];
 		end
 		'd6: begin
-			spi_mosi <= reg_spi_data[5];
+			spi_mosi <= reg_spi_write_data[5];
 		end
 		'd8: begin
-			spi_mosi <= reg_spi_data[4];
+			spi_mosi <= reg_spi_write_data[4];
 		end
 		'd10: begin
-			spi_mosi <= reg_spi_data[3];
+			spi_mosi <= reg_spi_write_data[3];
 		end
 		'd12: begin
-			spi_mosi <= reg_spi_data[2];
+			spi_mosi <= reg_spi_write_data[2];
 		end
 		'd14: begin
-			spi_mosi <= reg_spi_data[1];
+			spi_mosi <= reg_spi_write_data[1];
 		end
 		'd16: begin
-			spi_mosi <= reg_spi_data[0];		// WRITE bit 7
+			spi_mosi <= reg_spi_write_data[0];		// WRITE bit 7
 		end
 		'd18: begin
 			spi_write_state <= 'd0;
+			spi_mosi <= 1'b1;
 		end
 	endcase
 	
@@ -444,7 +479,7 @@ CLK  CS   3V3
 MISO MOSI GND
 */
 
-assign P110 = reg_spi[1]; // CS
+assign P110 = reg_spi[0]; // CS
 assign P50 = spi_clk; //reg_spi[2]; // CLK
 assign P61 = spi_mosi; //reg_spi[0]; // MOSI
 
