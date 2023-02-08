@@ -91,11 +91,8 @@ reg [7:0] d_in;
 reg [7:0] reg_spi_write_data = 'hFF;
 reg [7:0] reg_spi_read_data = 'hFF;
 
-reg spi_write_request = 1'b0; // active high to match user-facing spi_reg[4]
-reg [5:0] spi_write_state = 'd0;
-
-//reg spi_read_request = 1'b1;
-reg [5:0] spi_read_state = 'd0;
+reg spi_xfer = 1'b0; // active high
+reg [5:0] spi_xfer_state = 'd0;
 
 reg spi_clk = 1'b0;
 reg spi_mosi = 1'b1;
@@ -314,15 +311,10 @@ assign LED[3] = ~DSACK[0];		// dsp & part FPU
 assign LED[4] = ~STERM; // AltRAM
 assign LED[5] = ~(RST & FPUCS);	// reset active or FPU
 
-// reg_spi[6] == spi_read_request -- active high
-
 /* register section */
 always @(negedge CLKOSC) begin
-	if( spi_write_state != 'd0 ) begin
-		spi_write_request <= 1'b0;
-	end
-	if( spi_read_state != 'd0 ) begin
-		reg_spi[6] <= 1'b0;
+	if( spi_xfer_state != 'd0 ) begin
+		spi_xfer <= 1'b0;
 	end
 
 	if( ~(AS | DS | reg_access) ) begin
@@ -348,13 +340,12 @@ always @(negedge CLKOSC) begin
 					reg_dfb <= D[7:0];
 				end
 				4'h6: begin
-					reg_spi[6] <= D[6];
 					reg_spi[1] <= D[1];
 					reg_spi[0] <= D[0];
 				end
 				4'h4: begin
 					reg_spi_write_data <= D[7:0];
-					spi_write_request <= 1'b1;
+					spi_xfer <= 1'b1;
 				end
 			endcase
 		end
@@ -364,9 +355,9 @@ end
 assign D[7:0] = ( AS | DS | reg_access | ~XRW ) ? 8'hz : d_in;
 
 always @(negedge CLKOSC) begin
-	if( reg_spi[6] || spi_write_request )
+	if( spi_xfer )
 		reg_spi[7] <= 1'b1;
-	else if( spi_read_state == 'd0 && spi_write_state == 'd0 )
+	else if( spi_xfer_state == 'd0 )
 		reg_spi[7] <= 1'b0;
 	else
 		reg_spi[7] <= 1'b1;
@@ -378,96 +369,57 @@ always @( negedge SPICLK ) begin
 
 	spi_clk <= 1'b0;
 	
-	if( spi_read_state != 'd0 ) begin
-		spi_read_state <= spi_read_state + 'd1;
-		if( spi_read_state % 2 == 0 ) // even
+	if( spi_xfer_state != 'd0 ) begin
+		spi_xfer_state <= spi_xfer_state + 'd1;
+		if( spi_xfer_state % 2 == 0 ) // even
 			spi_clk <= 1'b0;
 		else
 			spi_clk <= 1'b1;
 	end
 	
-	if( spi_write_state != 'd0 ) begin
-		spi_write_state <= spi_write_state + 'd1;
-		if( spi_write_state % 2 == 0 ) // even
-			spi_clk <= 1'b0;
-		else
-			spi_clk <= 1'b1;
-	end
-
-	case(spi_read_state)
+	case(spi_xfer_state)
 		'd0: begin 										// SPI IDLE
-			if( reg_spi[6] ) begin
-				spi_read_state <= 'd1;
-				spi_mosi <= 1'b1;
+			if( spi_xfer ) begin
+				spi_xfer_state <= 'd1;
+				spi_mosi <= reg_spi_write_data[7];
 			end
 		end
 		'd2: begin
 			reg_spi_read_data[7] <= P106;
+			spi_mosi <= reg_spi_write_data[6];
 		end
 		'd4: begin
 			reg_spi_read_data[6] <= P106;
+			spi_mosi <= reg_spi_write_data[5];
 		end
 		'd6: begin
 			reg_spi_read_data[5] <= P106;
+			spi_mosi <= reg_spi_write_data[4];
 		end
 		'd8: begin
 			reg_spi_read_data[4] <= P106;
+			spi_mosi <= reg_spi_write_data[3];
 		end
 		'd10: begin
 			reg_spi_read_data[3] <= P106;
+			spi_mosi <= reg_spi_write_data[2];
 		end
 		'd12: begin
 			reg_spi_read_data[2] <= P106;
+			spi_mosi <= reg_spi_write_data[1];
 		end
 		'd14: begin
 			reg_spi_read_data[1] <= P106;
+			spi_mosi <= reg_spi_write_data[0];
 		end
 		'd16: begin
 			reg_spi_read_data[0] <= P106;
-			spi_read_state <= 'd0;
-		end
-	endcase
-
-
-	case(spi_write_state)
-		'd0: begin 										// SPI IDLE
-			if( !reg_spi[6] && spi_write_request ) begin
-				spi_write_state <= 'd2;
-			end
-		end
-		'd2: begin										// WRITE bit 0
-			spi_mosi <= reg_spi_write_data[7];
-		end
-		'd4: begin
-			spi_mosi <= reg_spi_write_data[6];
-		end
-		'd6: begin
-			spi_mosi <= reg_spi_write_data[5];
-		end
-		'd8: begin
-			spi_mosi <= reg_spi_write_data[4];
-		end
-		'd10: begin
-			spi_mosi <= reg_spi_write_data[3];
-		end
-		'd12: begin
-			spi_mosi <= reg_spi_write_data[2];
-		end
-		'd14: begin
-			spi_mosi <= reg_spi_write_data[1];
-		end
-		'd16: begin
-			spi_mosi <= reg_spi_write_data[0];		// WRITE bit 7
-		end
-		'd18: begin
-			spi_write_state <= 'd0;
-			spi_mosi <= 1'b1;
+			spi_xfer_state <= 'd0;
 		end
 	endcase
 	
 	if( ~RST ) begin
-		spi_write_state <= 'd0;
-		spi_read_state <= 'd0;
+		spi_xfer_state <= 'd0;
 	end
 	
 end
