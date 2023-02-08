@@ -85,7 +85,7 @@ FDCP latch_resetblock( .D( 1'b1 ), .C( ~speedallowtrigger ), .CLR( ~RST ), .PRE(
 
 /* config section */
 reg [7:0] reg_dfb = 8'b11111101;
-reg [7:0] reg_spi = 8'b11111111; // [7] = busy; [6] = read req; [5-1] reserved ; [0] = CS
+reg [7:0] reg_spi = 8'b11111111; // [7] = busy; [6] = read req; [5-2] reserved ; [1] = low speed clock ; [0] = CS
 
 reg [7:0] d_in;
 reg [7:0] reg_spi_write_data = 'hFF;
@@ -338,7 +338,7 @@ always @(negedge CLKOSC) begin
 					d_in <= reg_spi_read_data;
 				end
 				4'h6: begin
-					d_in <= { reg_spi[7], 6'd0, reg_spi[0] };
+					d_in <= { reg_spi[7], 5'd0, reg_spi[1], reg_spi[0] };
 				end			
 			endcase
 		end
@@ -349,6 +349,7 @@ always @(negedge CLKOSC) begin
 				end
 				4'h6: begin
 					reg_spi[6] <= D[6];
+					reg_spi[1] <= D[1];
 					reg_spi[0] <= D[0];
 				end
 				4'h4: begin
@@ -371,7 +372,9 @@ always @(negedge CLKOSC) begin
 		reg_spi[7] <= 1'b1;
 end
 
-always @( negedge KHZ500 ) begin
+wire SPICLK = reg_spi[1] ? KHZ500 : XCPUCLK;
+
+always @( negedge SPICLK ) begin
 
 	spi_clk <= 1'b0;
 	
