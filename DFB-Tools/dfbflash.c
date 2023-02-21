@@ -149,11 +149,11 @@ int main( int argc, char *argv[] ) {
   Supexec(cacheoff);
   printf("Erasing Flash...\n");
   Supexec(erase);
-  sleep(5);
+  sleep(10);
 
   printf("Programming Flash...\n");
   Supexec(program);
-  sleep(5);
+  sleep(10);
   
   printf("Verifying...\n");
   Supexec(verify);
