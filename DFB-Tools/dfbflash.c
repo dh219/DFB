@@ -138,6 +138,7 @@ int main( int argc, char *argv[] ) {
   buf = (uint16_t*)malloc( fsize );
   if( !buf ) {
     fprintf( stderr, "Insufficient memory to allocate %lu bytes for image.\n", fsize );
+      exit(1);
   }
   printf("Reading %s...", argv[1]);
   sizeread = fread( buf, 1, fsize, fp );
@@ -146,11 +147,26 @@ int main( int argc, char *argv[] ) {
   }
   printf(" %ld bytes.\n", fsize);
 
-  Supexec(cacheoff);
-  printf("Erasing Flash...\n");
-  Supexec(erase);
-  sleep(10);
-
+  printf("\nOPTIONAL CHIP ERASE\n\n");
+  printf("Normally you would want to erase a 512k\n");
+  printf(" chip before writing. However with a\n");
+  printf(" 1MB (dual-bank) chip, an erase will\n");
+  printf(" wipe both banks. You'll then have to\n");
+  printf(" re-program the second bank without\n");
+  printf(" erasing the chip again.\n");
+  printf("\nWould you like to erase the chip? (Y/N)\n");
+  
+  int key = (int)(Cconin() & 0xffff);
+  printf("\n");
+  if( key == 'y' || key == 'Y' ) {
+      Supexec(cacheoff);
+      printf("Erasing Flash...\n");
+      Supexec(erase);
+      sleep(10);
+  }
+  else {
+      printf("Skipping erase.\n");
+  }
   printf("Programming Flash...\n");
   Supexec(program);
   sleep(10);
