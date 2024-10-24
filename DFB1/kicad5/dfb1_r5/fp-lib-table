@@ -1,0 +1,4 @@
+(fp_lib_table
+  (lib (name david)(type KiCad)(uri ${KIPRJMOD}/kicad-libraries/david.pretty)(options "")(descr ""))
+  (lib (name MC68030)(type Legacy)(uri ${KIPRJMOD}/kicad-libraries/MC68030.mod)(options "")(descr ""))
+)

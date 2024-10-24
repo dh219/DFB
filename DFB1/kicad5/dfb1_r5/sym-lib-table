@@ -1,0 +1,6 @@
+(sym_lib_table
+  (lib (name 68k)(type Legacy)(uri ${KIPRJMOD}/kicad-libraries/68k.lib)(options "")(descr ""))
+  (lib (name david)(type Legacy)(uri ${KIPRJMOD}/kicad-libraries/david.lib)(options "")(descr ""))
+  (lib (name SN74CB3T3245DW)(type Legacy)(uri ${KIPRJMOD}/kicad-libraries/SN74CB3T3245DW.lib)(options "")(descr ""))
+  (lib (name XC95288XL-10TQG144I)(type Legacy)(uri ${KIPRJMOD}/kicad-libraries/XC95288XL-10TQG144I.lib)(options "")(descr ""))
+)
