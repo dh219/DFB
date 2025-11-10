@@ -217,22 +217,22 @@ always @(negedge AS) begin
 end
 
 wire [2:0] oldxdtack;
-FDCP ff_xdtackdly1( .D( XDTACK ), .C( XCPUCLK ), .CLR(1'b0), .PRE( 1'b0 ), .Q(oldxdtack[0]) );
-FDCP ff_xdtackdly2( .D(oldxdtack[0]), .C( XCPUCLK ), .CLR(1'b0), .PRE( 1'b0 ), .Q(oldxdtack[1]) );
-FDCP ff_xdtackdly3( .D(oldxdtack[1]), .C( XCPUCLK ), .CLR(1'b0), .PRE( 1'b0 ), .Q(oldxdtack[2]) );
-wire xas_holdoff_dsp = ~dsp_access & ~oldxdtack[1] & XAS;
+FDCP ff_xdtackdly1( .D( XDTACK ), .C( ~XCPUCLK ), .CLR(1'b0), .PRE( 1'b0 ), .Q(oldxdtack[0]) );
+FDCP ff_xdtackdly2( .D(oldxdtack[0]), .C( ~XCPUCLK ), .CLR(1'b0), .PRE( 1'b0 ), .Q(oldxdtack[1]) );
+FDCP ff_xdtackdly3( .D(oldxdtack[1]), .C( ~XCPUCLK ), .CLR(1'b0), .PRE( 1'b0 ), .Q(oldxdtack[2]) );
+wire xas_holdoff_dsp = ~dsp_access & ~oldxdtack[0] & XAS;
 
 /* XAS XCPUCLK delay */
 wire [3:0] xasxdly;
-FDCP ff_xasxdly0( .D( XAS), .C( ~XCPUCLK ), .CLR(1'b0), .PRE( AS ), .Q(xasxdly[0]) );
-FDCP ff_xasxdly1( .D( xasxdly[0] ), .C( ~XCPUCLK ), .CLR(1'b0), .PRE( XAS ), .Q(xasxdly[1]) );
-FDCP ff_xasxdly2( .D( xasxdly[1] ), .C( ~XCPUCLK ), .CLR(1'b0), .PRE( XAS ), .Q(xasxdly[2]) );
-FDCP ff_xasxdly3( .D( xasxdly[2] ), .C( ~XCPUCLK ), .CLR(1'b0), .PRE( XAS ), .Q(xasxdly[3]) );
+FDCP ff_xasxdly0( .D( XAS), .C( XCPUCLK ), .CLR(1'b0), .PRE( AS ), .Q(xasxdly[0]) );
+FDCP ff_xasxdly1( .D( xasxdly[0] ), .C( XCPUCLK ), .CLR(1'b0), .PRE( XAS ), .Q(xasxdly[1]) );
+FDCP ff_xasxdly2( .D( xasxdly[1] ), .C( XCPUCLK ), .CLR(1'b0), .PRE( XAS ), .Q(xasxdly[2]) );
+FDCP ff_xasxdly3( .D( xasxdly[2] ), .C( XCPUCLK ), .CLR(1'b0), .PRE( XAS ), .Q(xasxdly[3]) );
 
 
 wire [1:0] RAM_DTACK = { XDTACK | ~dsp_access | ~AVECCYCLE, 1'b1 };
 wire [1:0] ROM_DTACK = { rom_access | ( lowspeed ? AS_DELAY[4] : AS_DELAY[1] ), 1'b1 };
-wire [1:0] DSP_DTACK = { 1'b1, xasxdly[2] | dsp_access };
+wire [1:0] DSP_DTACK = { 1'b1, xasxdly[0] | dsp_access };
 wire [1:0] FPU_DSACK_INT = fpu | FPUDSACK;
 wire [1:0] REG_DSACK = { reg_access | ( AS_DELAY[4] & flash_xas_delay[1] ), 1'b1 }; // only really an 8 bit port, but pretend to be 16 to keep compatibility when being read from the Falcon's motherboard in disabled state
 
