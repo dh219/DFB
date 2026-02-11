@@ -45,10 +45,10 @@ module dfb1r5(
 	input [7:0] D,
 	output [1:5] LED,
 
-	input P50,
-	input P61,
-	input P106,
-	input P110,
+	output P50,
+	output P61,
+	output P106,
+	output P110,
 
 	input   			CLKOSC,
 	input KHZ500,
@@ -100,6 +100,7 @@ wire HIGHZ;
 wire [3:0] state;
 
 wire hlt;
+
 /* optimise */
 ARBDFB1 arbdfb1 (
 	.DISABLED( DISABLE ),
@@ -284,5 +285,10 @@ assign LED[2] = lowspeed; // speed
 assign LED[3] = ~DSACK[0];		// dsp & part FPU
 assign LED[4] = ~STERM; // AltRAM
 assign LED[5] = ~(RST & FPUCS);	// reset active or FPU
+
+assign P110 = state[0];
+assign P50 = state[1];
+assign P106 = state[2];
+assign P61 = state[3];
 
 endmodule

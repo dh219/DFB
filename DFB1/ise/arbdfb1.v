@@ -12,8 +12,10 @@ module ARBDFB1 (
 	input _RST,
 	input _XAS,
 	input _XBG,
+
 	inout _XBR,
 	inout _XBGK,
+
 	input _AS,
 	input _BG,
 
@@ -92,7 +94,8 @@ always @( posedge CLOCK  ) begin
 	state <= nextstate;
 end
 
-always @(state) begin
+//always @(state) begin
+always @( negedge CLOCK ) begin
 	case(state)
 		REQ: begin	
 			xbr <= 1'b0;
