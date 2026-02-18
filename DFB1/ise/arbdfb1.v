@@ -92,10 +92,10 @@ always @( posedge CLOCK  ) begin
 	end
 
 	state <= nextstate;
-end
+//end
 
 //always @(state) begin
-always @( negedge CLOCK ) begin
+//always @( negedge CLOCK ) begin
 	case(state)
 		REQ: begin	
 			xbr <= 1'b0;
