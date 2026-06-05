@@ -217,11 +217,9 @@ always @(negedge AS) begin
 	AVECCYCLE <= ( FC[2:0] != 3'b111 | A[19:16] != 4'b1111 ) | ( A[3:1] != 'd2 && A[3:1] != 'd4 );
 end
 
-wire [2:0] oldxdtack;
-FDCP ff_xdtackdly1( .D( XDTACK ), .C( XCPUCLK ), .CLR(1'b0), .PRE( 1'b0 ), .Q(oldxdtack[0]) );
-FDCP ff_xdtackdly2( .D(oldxdtack[0]), .C( XCPUCLK ), .CLR(1'b0), .PRE( 1'b0 ), .Q(oldxdtack[1]) );
-FDCP ff_xdtackdly3( .D(oldxdtack[1]), .C( XCPUCLK ), .CLR(1'b0), .PRE( 1'b0 ), .Q(oldxdtack[2]) );
-wire xas_holdoff_dsp = ~dsp_access & ~oldxdtack[1] & XAS;
+wire oldxdtack;
+FDCP ff_xdtackdly1( .D( XDTACK ), .C( XCPUCLK ), .CLR(1'b0), .PRE( 1'b0 ), .Q(oldxdtack) );
+wire xas_holdoff_dsp = ~dsp_access & ~oldxdtack & XAS;
 
 
 wire [1:0] RAM_DTACK = { XDTACK | ~dsp_access | ~AVECCYCLE, 1'b1 };
