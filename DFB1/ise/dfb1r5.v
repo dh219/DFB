@@ -218,7 +218,7 @@ always @(negedge AS) begin
 end
 
 wire oldxdtack;
-FDCP ff_xdtackdly1( .D( XDTACK ), .C( XCPUCLK ), .CLR(1'b0), .PRE( 1'b0 ), .Q(oldxdtack) );
+FDCP ff_xdtackdly1( .D( XDTACK ), .C( ~XCPUCLK ), .CLR(1'b0), .PRE( 1'b0 ), .Q(oldxdtack) );
 wire xas_holdoff_dsp = ~dsp_access & ~oldxdtack & XAS;
 
 wire [1:0] RAM_DTACK = { XDTACK | ~dsp_access | ~AVECCYCLE, 1'b1 };
@@ -233,7 +233,7 @@ assign DSACK = ( RAM_DTACK & ROM_DTACK & DSP_DTACK & FPU_DSACK_INT & { FLASH_DTA
 // assignments
 assign FPUCS = fpu;
 
-wire xas =  AS | /*xas_holdoff_dsp |*/ ~ttram_access | ~rom_access | ~fpu;
+wire xas =  AS | xas_holdoff_dsp | ~ttram_access | ~rom_access | ~fpu;
 
 wire	fuds = xas | ( dsp_access ? ( ~XRW & A[0] ) : A[0] );
 wire	flds = xas | ( dsp_access ? ( ~XRW & ({A[0], SIZ[1:0]} == 3'b001) ) : ~A[0] );
